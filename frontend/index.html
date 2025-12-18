@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instructor Framework Demo - 構造化出力サンプル</title>
+    <style>
+        /* 全体のスタイル設定 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        /* ヘッダー部分のスタイル */
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        /* メインコンテンツエリア */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 30px;
+        }
+
+        /* 入力エリアのスタイル */
+        .input-section, .output-section {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        /* フォーム要素のスタイル */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        textarea, select, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus, select:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        /* ボタンのスタイル */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 出力エリアのスタイル */
+        .output-content {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            border: 2px solid #ddd;
+            min-height: 300px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .output-content pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* ステータスメッセージのスタイル */
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+
+        /* カスタムスキーマエリアのスタイル */
+        .custom-schema-area {
+            display: none;
+            margin-top: 15px;
+        }
+
+        .custom-schema-area.active {
+            display: block;
+        }
+
+        /* ヘルプテキストのスタイル */
+        .help-text {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        /* 例文エリアのスタイル */
+        .examples {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+
+        .examples h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .example-item {
+            margin-bottom: 8px;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .example-item:hover {
+            background: #f0f0f0;
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+
+        /* ローディングアニメーション */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ヘッダー部分 -->
+        <header>
+            <h1>🤖 Instructor Framework Demo</h1>
+            <p>LLMから構造化された出力を取得するデモアプリケーション</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">Ollama (llama3.1:8b) + Instructor</p>
+        </header>
+
+        <!-- メインコンテンツ -->
+        <div class="main-content">
+            <!-- 入力セクション -->
+            <div class="input-section">
+                <h2 class="section-title">📝 入力設定</h2>
+
+                <!-- プロンプト入力エリア -->
+                <div class="form-group">
+                    <label for="prompt">プロンプト:</label>
+                    <textarea
+                        id="prompt"
+                        placeholder="ここにプロンプトを入力してください..."
+                    >田中太郎は35歳のエンジニアで、メールアドレスはtanaka@example.comです。</textarea>
+                    <p class="help-text">LLMに送信するプロンプトを入力してください</p>
+                </div>
+
+                <!-- フォーマット選択 -->
+                <div class="form-group">
+                    <label for="formatType">出力フォーマット:</label>
+                    <select id="formatType">
+                        <option value="user">ユーザー情報</option>
+                        <option value="product">製品情報</option>
+                        <option value="article">記事情報</option>
+                        <option value="tasklist">タスクリスト</option>
+                        <option value="custom">カスタムフォーマット</option>
+                    </select>
+                    <p class="help-text">構造化出力のフォーマットを選択してください</p>
+                </div>
+
+                <!-- カスタムスキーマエリア（カスタムフォーマット選択時のみ表示） -->
+                <div class="custom-schema-area" id="customSchemaArea">
+                    <div class="form-group">
+                        <label for="customSchema">カスタムスキーマ (JSON):</label>
+                        <textarea
+                            id="customSchema"
+                            placeholder='{"field1": "str", "field2": "int"}'
+                            rows="5"
+                        ></textarea>
+                        <p class="help-text">カスタムフォーマットのスキーマをJSON形式で入力</p>
+                    </div>
+                </div>
+
+                <!-- 例文エリア -->
+                <div class="examples">
+                    <h4>📌 プロンプト例:</h4>
+                    <div class="example-list" id="exampleList">
+                        <!-- JavaScriptで動的に生成 -->
+                    </div>
+                </div>
+
+                <!-- ボタングループ -->
+                <div class="button-group">
+                    <button class="btn-primary" id="generateBtn">
+                        生成
+                    </button>
+                    <button class="btn-secondary" id="clearBtn">
+                        クリア
+                    </button>
+                </div>
+            </div>
+
+            <!-- 出力セクション -->
+            <div class="output-section">
+                <h2 class="section-title">📊 出力結果</h2>
+
+                <!-- ステータスメッセージ -->
+                <div class="status" id="status"></div>
+
+                <!-- 出力内容 -->
+                <div class="output-content" id="output">
+                    <p style="color: #999; text-align: center; padding: 50px 20px;">
+                        出力結果がここに表示されます
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =============================================================================
+        // グローバル変数と定数
+        // =============================================================================
+
+        // APIのベースURL（実際の環境に合わせて変更）
+        const API_BASE_URL = 'http://localhost:8000';
+
+        // DOM要素の取得
+        const promptTextarea = document.getElementById('prompt');
+        const formatTypeSelect = document.getElementById('formatType');
+        const customSchemaArea = document.getElementById('customSchemaArea');
+        const customSchemaTextarea = document.getElementById('customSchema');
+        const generateBtn = document.getElementById('generateBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const statusDiv = document.getElementById('status');
+        const outputDiv = document.getElementById('output');
+        const exampleList = document.getElementById('exampleList');
+
+        // 各フォーマットの例文データ
+        const examples = {
+            user: [
+                '田中太郎は35歳のエンジニアで、メールアドレスはtanaka@example.comです。',
+                '佐藤花子、28歳、デザイナー、satoh.hanako@design.jp',
+                '山田次郎は42歳の教師です。'
+            ],
+            product: [
+                'iPhone 15は149,800円のスマートフォンで、最新のA17チップを搭載しています。在庫あり。',
+                'ワイヤレスイヤホン、価格8,900円、オーディオカテゴリ、ノイズキャンセリング機能付き、在庫切れ',
+                'ノートパソコン Core i7、メモリ16GB、SSD512GB、価格128,000円、コンピュータカテゴリー、在庫あり'
+            ],
+            article: [
+                '山田花子が書いた「AIの未来」という記事は、人工知能の発展について論じています。タグ: AI, 機械学習, 未来。公開日: 2024年1月15日',
+                '「クラウドコンピューティング入門」、著者: 鈴木太郎、クラウド技術の基礎を解説。タグ: クラウド, AWS, Azure',
+                '佐藤一郎による「プログラミング言語の比較」は、Python、JavaScript、Goの特徴を比較。2024年2月1日公開。タグ: プログラミング, 言語比較'
+            ],
+            tasklist: [
+                'Webサイトリニューアルプロジェクトで、デザイン作成(高優先度、締切: 2024-02-01)、コーディング(中優先度、締切: 2024-02-15)、テスト(低優先度、締切: 2024-02-28)の3つのタスクがあります。',
+                'モバイルアプリ開発。タスク: 要件定義(高)、UI設計(中)、実装(高)、リリース準備(低)。4つのタスク。',
+                '営業プロジェクト: 顧客リストアップ(高、2024-01-31)、提案資料作成(中、2024-02-05)、プレゼン(高、2024-02-10)'
+            ],
+            custom: [
+                'カスタムスキーマを定義してください'
+            ]
+        };
+
+        // =============================================================================
+        // 初期化処理
+        // =============================================================================
+
+        /**
+         * ページ読み込み時の初期化
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            // 例文リストを初期化
+            updateExamples();
+
+            // イベントリスナーの設定
+            formatTypeSelect.addEventListener('change', handleFormatChange);
+            generateBtn.addEventListener('click', handleGenerate);
+            clearBtn.addEventListener('click', handleClear);
+
+            // ヘルスチェックを実行
+            checkAPIHealth();
+        });
+
+        // =============================================================================
+        // イベントハンドラー
+        // =============================================================================
+
+        /**
+         * フォーマット選択変更時の処理
+         */
+        function handleFormatChange() {
+            const selectedFormat = formatTypeSelect.value;
+
+            // カスタムフォーマットの場合はスキーマ入力エリアを表示
+            if (selectedFormat === 'custom') {
+                customSchemaArea.classList.add('active');
+            } else {
+                customSchemaArea.classList.remove('active');
+            }
+
+            // 例文リストを更新
+            updateExamples();
+        }
+
+        /**
+         * 生成ボタンクリック時の処理
+         */
+        async function handleGenerate() {
+            const prompt = promptTextarea.value.trim();
+            const formatType = formatTypeSelect.value;
+            const customSchema = customSchemaTextarea.value.trim();
+
+            // 入力検証
+            if (!prompt) {
+                showStatus('error', 'プロンプトを入力してください');
+                return;
+            }
+
+            if (formatType === 'custom' && !customSchema) {
+                showStatus('error', 'カスタムスキーマを入力してください');
+                return;
+            }
+
+            // ボタンを無効化
+            setButtonsEnabled(false);
+
+            // ローディング表示
+            showStatus('loading', '生成中... <span class="spinner"></span>');
+
+            try {
+                // APIリクエストを送信
+                const response = await fetch(`${API_BASE_URL}/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        format_type: formatType,
+                        custom_schema: formatType === 'custom' ? customSchema : null
+                    })
+                });
+
+                // レスポンスをパース
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // 成功時の処理
+                    showStatus('success', '✅ 構造化出力の生成に成功しました');
+                    displayOutput(data);
+                } else {
+                    // エラー時の処理
+                    showStatus('error', `❌ エラー: ${data.detail || 'Unknown error'}`);
+                    outputDiv.innerHTML = '<p style="color: red;">エラーが発生しました</p>';
+                }
+            } catch (error) {
+                // ネットワークエラーなどの処理
+                showStatus('error', `❌ エラー: ${error.message}`);
+                outputDiv.innerHTML = '<p style="color: red;">APIとの通信に失敗しました</p>';
+            } finally {
+                // ボタンを再有効化
+                setButtonsEnabled(true);
+            }
+        }
+
+        /**
+         * クリアボタンクリック時の処理
+         */
+        function handleClear() {
+            promptTextarea.value = '';
+            customSchemaTextarea.value = '';
+            outputDiv.innerHTML = '<p style="color: #999; text-align: center; padding: 50px 20px;">出力結果がここに表示されます</p>';
+            statusDiv.className = 'status';
+            statusDiv.textContent = '';
+        }
+
+        /**
+         * 例文クリック時の処理
+         */
+        function handleExampleClick(exampleText) {
+            promptTextarea.value = exampleText;
+            // テキストエリアにフォーカス
+            promptTextarea.focus();
+        }
+
+        // =============================================================================
+        // UI更新関数
+        // =============================================================================
+
+        /**
+         * ステータスメッセージを表示
+         */
+        function showStatus(type, message) {
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+        }
+
+        /**
+         * 出力結果を表示
+         */
+        function displayOutput(data) {
+            // JSON形式で整形して表示
+            const formattedData = JSON.stringify(data.data, null, 2);
+            outputDiv.innerHTML = `
+                <div style="margin-bottom: 15px;">
+                    <strong>フォーマットタイプ:</strong> ${data.format_type}
+                </div>
+                <pre>${formattedData}</pre>
+            `;
+        }
+
+        /**
+         * ボタンの有効/無効を切り替え
+         */
+        function setButtonsEnabled(enabled) {
+            generateBtn.disabled = !enabled;
+            clearBtn.disabled = !enabled;
+
+            if (!enabled) {
+                generateBtn.innerHTML = '生成中... <span class="spinner"></span>';
+            } else {
+                generateBtn.innerHTML = '生成';
+            }
+        }
+
+        /**
+         * 例文リストを更新
+         */
+        function updateExamples() {
+            const selectedFormat = formatTypeSelect.value;
+            const exampleTexts = examples[selectedFormat] || [];
+
+            exampleList.innerHTML = exampleTexts.map(text =>
+                `<div class="example-item" onclick="handleExampleClick(\`${text}\`)">${text}</div>`
+            ).join('');
+        }
+
+        /**
+         * APIヘルスチェック
+         */
+        async function checkAPIHealth() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const data = await response.json();
+
+                if (data.status === 'healthy') {
+                    console.log('✅ API is healthy');
+                } else {
+                    console.warn('⚠️ API is unhealthy:', data);
+                }
+            } catch (error) {
+                console.error('❌ Failed to connect to API:', error);
+            }
+        }
+    </script>
+</body>
+</html>

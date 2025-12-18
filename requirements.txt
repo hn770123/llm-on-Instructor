@@ -1,0 +1,19 @@
+# Instructorフレームワークを使用したWebアプリケーションの依存関係
+
+# Instructorフレームワーク - LLMから構造化出力を取得するためのコアライブラリ
+instructor>=1.0.0
+
+# FastAPI - 高速なWebフレームワーク
+fastapi>=0.104.0
+
+# Uvicorn - ASGIサーバー（FastAPIを実行するため）
+uvicorn[standard]>=0.24.0
+
+# Pydantic - データ検証とスキーマ定義のため（Instructorが依存）
+pydantic>=2.0.0
+
+# Ollama用のPythonクライアント
+ollama>=0.1.0
+
+# CORS対応のためのミドルウェア
+python-multipart>=0.0.6
