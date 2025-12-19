@@ -102,7 +102,7 @@ sequenceDiagram
         end
     end
 
-    alt 最大リトライ回数超過
+    opt 最大リトライ回数超過
         Instructor-->>App: InstructorRetryException
     end
 ```
