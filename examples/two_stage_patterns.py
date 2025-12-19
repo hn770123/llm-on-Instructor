@@ -13,15 +13,21 @@ from datetime import date
 
 
 # =============================================================================
-# パターン1: Chain of Thought (基本)
+# パターン1: Chain of Thought (2段階)
 # =============================================================================
 
-class ChainOfThoughtResponse(BaseModel):
-    """推論プロセスを含む基本的な応答モデル"""
-
-    chain_of_thought: str = Field(
-        description="問題を解決するための段階的な推論プロセスを自然な日本語で記述してください"
+class ThinkingProcess(BaseModel):
+    """第1段階: 推論プロセス（自然言語）"""
+    reasoning: str = Field(
+        description="問題を解決するための段階的な推論プロセスを自然な日本語で詳しく記述してください"
     )
+    intermediate_steps: List[str] = Field(
+        description="推論の各ステップを箇条書きで記述"
+    )
+
+
+class ChainOfThoughtResponse(BaseModel):
+    """第2段階: 構造化された最終応答"""
     final_answer: str = Field(
         description="推論後の最終的な答え"
     )
@@ -30,22 +36,29 @@ class ChainOfThoughtResponse(BaseModel):
         ge=0.0,
         le=1.0
     )
+    reasoning_summary: str = Field(
+        description="推論プロセスの要約"
+    )
 
 
 def example_basic_cot():
-    """基本的なChain of Thoughtの例"""
+    """2段階Chain of Thoughtの例"""
     client = instructor.from_openai(
         ollama.Client(),
         mode=instructor.Mode.JSON
     )
 
-    response = client.chat.completions.create(
+    # 第1段階: 推論プロセスを生成
+    print("=== Chain of Thought (2段階) ===")
+    print("第1段階: 推論プロセスを生成中...")
+
+    thinking = client.chat.completions.create(
         model="llama3.1:8b",
-        response_model=ChainOfThoughtResponse,
+        response_model=ThinkingProcess,
         messages=[
             {
                 "role": "system",
-                "content": "あなたは段階的に考えて問題を解決するアシスタントです。"
+                "content": "問題を段階的に考えて、推論プロセスを詳しく記述してください。"
             },
             {
                 "role": "user",
@@ -54,10 +67,30 @@ def example_basic_cot():
         ],
     )
 
-    print("=== Chain of Thought (基本) ===")
-    print(f"推論プロセス: {response.chain_of_thought}")
+    print(f"推論プロセス: {thinking.reasoning}")
+    print(f"ステップ: {', '.join(thinking.intermediate_steps)}")
+
+    # 第2段階: 推論から構造化された答えを抽出
+    print("\n第2段階: 構造化データを抽出中...")
+
+    response = client.chat.completions.create(
+        model="llama3.1:8b",
+        response_model=ChainOfThoughtResponse,
+        messages=[
+            {
+                "role": "system",
+                "content": "以下の推論プロセスから最終的な答えと確信度を抽出してください。"
+            },
+            {
+                "role": "user",
+                "content": f"推論プロセス:\n{thinking.reasoning}\n\nステップ:\n" + "\n".join(f"- {step}" for step in thinking.intermediate_steps)
+            }
+        ],
+    )
+
     print(f"最終答え: {response.final_answer}")
     print(f"確信度: {response.confidence}")
+    print(f"要約: {response.reasoning_summary}")
     print()
 
 
@@ -164,8 +197,15 @@ def example_tabular_cot():
 
 
 # =============================================================================
-# パターン4: Maybe Pattern (自然言語フォールバック)
+# パターン4: Maybe Pattern (2段階 - 自然言語フォールバック)
 # =============================================================================
+
+class TextAnalysis(BaseModel):
+    """第1段階: テキスト分析"""
+    contains_user_info: bool = Field(description="ユーザー情報が含まれているか")
+    analysis: str = Field(description="テキスト内容の分析")
+    extracted_elements: List[str] = Field(description="見つかった情報要素のリスト")
+
 
 class UserDetail(BaseModel):
     """ユーザー詳細情報"""
@@ -176,7 +216,7 @@ class UserDetail(BaseModel):
 
 
 class MaybeUserResponse(BaseModel):
-    """ユーザー情報の抽出結果（失敗時の自然言語メッセージ付き）"""
+    """第2段階: ユーザー情報の抽出結果（失敗時の自然言語メッセージ付き）"""
     result: Optional[UserDetail] = Field(
         default=None,
         description="抽出されたユーザー詳細情報。情報が不足している場合はNone"
@@ -192,25 +232,48 @@ class MaybeUserResponse(BaseModel):
 
 
 def example_maybe_pattern():
-    """Maybeパターン（自然言語フォールバック）の例"""
+    """2段階Maybeパターン（自然言語フォールバック）の例"""
     client = instructor.from_openai(
         ollama.Client(),
         mode=instructor.Mode.JSON
     )
 
     # 成功ケース
-    print("=== Maybe Pattern - 成功ケース ===")
+    print("=== Maybe Pattern (2段階) - 成功ケース ===")
+    print("第1段階: テキスト分析中...")
+
+    analysis1 = client.chat.completions.create(
+        model="llama3.1:8b",
+        response_model=TextAnalysis,
+        messages=[
+            {
+                "role": "system",
+                "content": "テキストを分析して、ユーザー情報が含まれているか判定してください。"
+            },
+            {
+                "role": "user",
+                "content": "田中太郎は35歳のエンジニアで、メールアドレスはtanaka@example.comです"
+            }
+        ],
+    )
+
+    print(f"ユーザー情報含有: {analysis1.contains_user_info}")
+    print(f"分析: {analysis1.analysis}")
+    print(f"抽出要素: {', '.join(analysis1.extracted_elements)}")
+
+    print("\n第2段階: 構造化データを抽出中...")
+
     response1 = client.chat.completions.create(
         model="llama3.1:8b",
         response_model=MaybeUserResponse,
         messages=[
             {
                 "role": "system",
-                "content": "テキストからユーザー情報を抽出してください。情報が不足している場合はerrorをtrueにしてmessageで説明してください。"
+                "content": "分析結果からユーザー情報を抽出してください。情報が不足している場合はerrorをtrueにしてmessageで説明してください。"
             },
             {
                 "role": "user",
-                "content": "田中太郎は35歳のエンジニアで、メールアドレスはtanaka@example.comです"
+                "content": f"分析結果:\n{analysis1.analysis}\n\n抽出要素:\n" + "\n".join(f"- {elem}" for elem in analysis1.extracted_elements)
             }
         ],
     )
@@ -225,18 +288,40 @@ def example_maybe_pattern():
     print()
 
     # 失敗ケース
-    print("=== Maybe Pattern - 失敗ケース ===")
+    print("=== Maybe Pattern (2段階) - 失敗ケース ===")
+    print("第1段階: テキスト分析中...")
+
+    analysis2 = client.chat.completions.create(
+        model="llama3.1:8b",
+        response_model=TextAnalysis,
+        messages=[
+            {
+                "role": "system",
+                "content": "テキストを分析して、ユーザー情報が含まれているか判定してください。"
+            },
+            {
+                "role": "user",
+                "content": "今日は良い天気ですね"
+            }
+        ],
+    )
+
+    print(f"ユーザー情報含有: {analysis2.contains_user_info}")
+    print(f"分析: {analysis2.analysis}")
+
+    print("\n第2段階: 構造化データを抽出中...")
+
     response2 = client.chat.completions.create(
         model="llama3.1:8b",
         response_model=MaybeUserResponse,
         messages=[
             {
                 "role": "system",
-                "content": "テキストからユーザー情報を抽出してください。情報が不足している場合はerrorをtrueにしてmessageで説明してください。"
+                "content": "分析結果からユーザー情報を抽出してください。情報が不足している場合はerrorをtrueにしてmessageで説明してください。"
             },
             {
                 "role": "user",
-                "content": "今日は良い天気ですね"
+                "content": f"分析結果:\n{analysis2.analysis}\n\nユーザー情報含有: {analysis2.contains_user_info}"
             }
         ],
     )
@@ -314,7 +399,7 @@ def example_self_correction():
 
 
 # =============================================================================
-# パターン6: Plan and Solve
+# パターン6: Plan and Solve (2段階)
 # =============================================================================
 
 class PlanStep(BaseModel):
@@ -325,32 +410,38 @@ class PlanStep(BaseModel):
 
 
 class Plan(BaseModel):
-    """実行計画"""
+    """第1段階: 実行計画"""
     goal: str = Field(description="達成したい目標")
     steps: List[PlanStep] = Field(description="目標達成のための実行ステップのリスト")
+    considerations: List[str] = Field(description="計画時の考慮事項")
 
 
 class PlanAndSolveResponse(BaseModel):
-    """計画と解決策"""
-    plan: Plan = Field(description="問題解決のための詳細な計画")
+    """第2段階: 計画に基づいた解決策"""
     execution_summary: str = Field(description="計画に基づいた実行結果の要約")
+    step_results: List[str] = Field(description="各ステップの実行結果")
     final_answer: str = Field(description="最終的な答え")
+    confidence: float = Field(description="答えの確信度", ge=0.0, le=1.0)
 
 
 def example_plan_and_solve():
-    """Plan and Solve（計画→実行）の例"""
+    """2段階Plan and Solve（計画→実行）の例"""
     client = instructor.from_openai(
         ollama.Client(),
         mode=instructor.Mode.JSON
     )
 
-    response = client.chat.completions.create(
+    print("=== Plan and Solve (2段階) ===")
+    print("第1段階: 計画を立案中...")
+
+    # 第1段階: 計画を立てる
+    plan = client.chat.completions.create(
         model="llama3.1:8b",
-        response_model=PlanAndSolveResponse,
+        response_model=Plan,
         messages=[
             {
                 "role": "system",
-                "content": "まず詳細な計画を立て、その後段階的に問題を解決してください"
+                "content": "問題を解決するための詳細な計画を立ててください"
             },
             {
                 "role": "user",
@@ -359,15 +450,37 @@ def example_plan_and_solve():
         ],
     )
 
-    print("=== Plan and Solve ===")
-    print(f"目標: {response.plan.goal}")
+    print(f"目標: {plan.goal}")
     print("\n計画:")
-    for step in response.plan.steps:
+    for step in plan.steps:
         print(f"{step.step_number}. {step.description}")
         print(f"   期待結果: {step.expected_outcome}")
+    print(f"\n考慮事項: {', '.join(plan.considerations)}")
 
-    print(f"\n実行要約: {response.execution_summary}")
-    print(f"最終答え: {response.final_answer}")
+    # 第2段階: 計画を実行して答えを出す
+    print("\n第2段階: 計画を実行中...")
+
+    response = client.chat.completions.create(
+        model="llama3.1:8b",
+        response_model=PlanAndSolveResponse,
+        messages=[
+            {
+                "role": "system",
+                "content": "以下の計画に従って問題を解決してください"
+            },
+            {
+                "role": "user",
+                "content": f"計画:\n目標: {plan.goal}\n\nステップ:\n" + "\n".join(f"{step.step_number}. {step.description} (期待結果: {step.expected_outcome})" for step in plan.steps)
+            }
+        ],
+    )
+
+    print(f"実行要約: {response.execution_summary}")
+    print("\nステップ結果:")
+    for i, result in enumerate(response.step_results, 1):
+        print(f"{i}. {result}")
+    print(f"\n最終答え: {response.final_answer}")
+    print(f"確信度: {response.confidence}")
     print()
 
 
