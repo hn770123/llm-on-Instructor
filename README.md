@@ -31,12 +31,17 @@
 ```
 llm-on-Instructor/
 ├── backend/
-│   └── app.py              # FastAPI バックエンドアプリケーション
+│   └── app.py                          # FastAPI バックエンドアプリケーション
 ├── frontend/
-│   └── index.html          # Webフロントエンドインターフェース
-├── requirements.txt        # Python依存関係
-├── README.md              # このファイル
-└── research-Instructor.md # Instructorフレームワークの調査資料
+│   └── index.html                      # Webフロントエンドインターフェース
+├── docs/
+│   ├── instructor-flow-diagram.md      # Instructorフローダイアグラム
+│   └── two-stage-response-patterns.md  # 2段階応答パターン調査結果
+├── examples/
+│   └── two_stage_patterns.py           # 2段階応答パターンの実装例
+├── requirements.txt                    # Python依存関係
+├── README.md                          # このファイル
+└── research-Instructor.md             # Instructorフレームワークの調査資料
 ```
 
 ## 🔧 セットアップ
@@ -223,6 +228,7 @@ python -m http.server 8080
 4. **Ollama統合**: ローカルLLMの活用
 5. **フロントエンド/バックエンド通信**: Fetch APIの使用
 6. **エラーハンドリング**: 適切なエラー処理とユーザーフィードバック
+7. **2段階応答パターン**: Chain of Thought、Maybe、Self-Correctionなどの高度な手法
 
 ## 🔍 コードの解説
 
@@ -273,6 +279,25 @@ pip install -r requirements.txt --force-reinstall
 ## 📝 ライセンス
 
 このプロジェクトはサンプル/学習目的で作成されています。
+
+## 📚 ドキュメント
+
+このプロジェクトには以下のドキュメントが含まれています：
+
+### [2段階応答パターン調査](docs/two-stage-response-patterns.md)
+LLMの応答を自然言語→構造化データの2段階にする手法の詳細な調査結果。以下のパターンを網羅：
+- Chain of Thought (CoT)
+- Tabular Chain of Thought (Tab-CoT)
+- Maybeパターン（自然言語フォールバック）
+- Self-Correction / Retry
+- Plan and Solve
+- 小規模LLM向けの推奨実装パターン
+
+### [Instructorフローダイアグラム](docs/instructor-flow-diagram.md)
+Instructorフレームワークの動作フロー、バリデーション、リトライメカニズムの詳細な図解。
+
+### [実装例](examples/two_stage_patterns.py)
+8つの異なる2段階応答パターンの実装例。すぐに試せるサンプルコード付き。
 
 ## 🙏 参考資料
 
