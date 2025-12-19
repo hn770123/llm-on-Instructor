@@ -27,13 +27,13 @@ flowchart TD
     ValidateData -->|成功| TypeCheck{型チェック}
     ValidateData -->|失敗| ValidationError[バリデーションエラー検出<br/>- 必須フィールド欠落<br/>- 型不一致<br/>- 制約違反]
 
-    TypeCheck -->|成功| CustomValidation{カスタムバリデーション<br/>@field_validator}
+    TypeCheck -->|成功| CustomValidation{"カスタムバリデーション<br/>@field_validator"}
     TypeCheck -->|失敗| ValidationError
 
     CustomValidation -->|成功| StructuredData[構造化データ生成<br/>Pydanticモデルインスタンス]
     CustomValidation -->|失敗| ValidationError
 
-    ValidationError --> CheckRetry{リトライ回数<br/>< max_retries?}
+    ValidationError --> CheckRetry{"リトライ回数<br/>< max_retries?"}
 
     CheckRetry -->|Yes| PrepareRetry[リトライリクエストを準備<br/>- 元のプロンプト<br/>- エラー情報<br/>- 修正指示]
     CheckRetry -->|No| RaiseException[例外を発生<br/>ValidationError/<br/>InstructorRetryException]
@@ -113,18 +113,18 @@ sequenceDiagram
 flowchart TD
     Input[JSONレスポンス受信] --> Parse[JSON文字列パース]
 
-    Parse --> RequiredFields{必須フィールド<br/>すべて存在?}
+    Parse --> RequiredFields{"必須フィールド<br/>すべて存在?"}
     RequiredFields -->|No| Error1[MissingFieldError]
     RequiredFields -->|Yes| TypeValidation{型が正しい?}
 
     TypeValidation -->|No| Error2[TypeError]
-    TypeValidation -->|Yes| ConstraintCheck{制約を満たす?<br/>ge, le, max_length, etc.}
+    TypeValidation -->|Yes| ConstraintCheck{"制約を満たす?<br/>ge, le, max_length, etc."}
 
     ConstraintCheck -->|No| Error3[ValidationError]
-    ConstraintCheck -->|Yes| CustomValidator{カスタムバリデーター<br/>@field_validator}
+    ConstraintCheck -->|Yes| CustomValidator{"カスタムバリデーター<br/>@field_validator"}
 
     CustomValidator -->|失敗| Error4[CustomValidationError]
-    CustomValidator -->|成功| ModelValidator{モデルバリデーター<br/>@model_validator}
+    CustomValidator -->|成功| ModelValidator{"モデルバリデーター<br/>@model_validator"}
 
     ModelValidator -->|失敗| Error5[ModelValidationError]
     ModelValidator -->|成功| Success[バリデーション成功]
@@ -138,7 +138,7 @@ flowchart TD
     Collect --> PrepareRetry[リトライメッセージ準備<br/>エラー詳細を含める]
 
     Success --> Return([Pydanticモデル<br/>インスタンスを返す])
-    PrepareRetry --> CheckRetries{リトライ回数<br/>チェック}
+    PrepareRetry --> CheckRetries{"リトライ回数<br/>チェック"}
 
     style Error1 fill:#FF6B6B
     style Error2 fill:#FF6B6B
